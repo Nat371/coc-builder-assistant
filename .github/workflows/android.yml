@@ -14,6 +14,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,38 +27,39 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Configure Android SDK
+        run: |
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager tidak ditemukan"
+            exit 1
+          fi
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
 
       - name: Accept Android SDK licenses
         shell: bash
         run: |
           set +o pipefail
-          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
-          yes | "$SDKMANAGER" --licenses
-          test ${PIPESTATUS[1]} -eq 0
+          yes | "$SDKMANAGER" --licenses || true
 
       - name: Install Android SDK packages
         run: |
-          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Extract Android source
         run: |
           unzip -o CoCBuilderAssistant-Android-Source.zip -d android-source
-          echo "Files extracted:"
           find android-source -maxdepth 5 -type f | head -100
 
       - name: Build APK
         shell: bash
         run: |
           GRADLE_FILE="$(find android-source -type f -name gradlew -print -quit)"
-
           if [ -z "$GRADLE_FILE" ]; then
-            echo "ERROR: gradlew tidak ditemukan. ZIP bukan proyek Gradle lengkap."
+            echo "ERROR: gradlew tidak ditemukan dalam ZIP sumber."
             exit 1
           fi
-
           PROJECT_DIR="$(dirname "$GRADLE_FILE")"
           cd "$PROJECT_DIR"
           chmod +x gradlew
