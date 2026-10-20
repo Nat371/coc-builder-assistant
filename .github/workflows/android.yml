@@ -33,20 +33,13 @@ jobs:
 
       - name: Locate Android SDK
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME"
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager 2>/dev/null | sort -V | tail -n 1)"
-
           if [ -z "$SDKMANAGER" ]; then
             echo "ERROR: sdkmanager tidak ditemukan"
-            find "$ANDROID_HOME" -maxdepth 4 -type f -name sdkmanager
             exit 1
           fi
-
           echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
-          echo "SDK manager ditemukan: $SDKMANAGER"
 
       - name: Accept Android SDK licenses
         run: |
@@ -58,6 +51,60 @@ jobs:
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
+
+      - name: Fix Java and Kotlin JVM targets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path("android-source/coc-builder-assistant/app")
+          files = [
+              root / "build.gradle.kts",
+              root / "build.gradle"
+          ]
+
+          target = next((p for p in files if p.exists()), None)
+          if target is None:
+              raise SystemExit("ERROR: app/build.gradle(.kts) tidak ditemukan")
+
+          if target.suffix == ".kts":
+              fix = '''
+          
+          android {
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+          }
+
+          tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          '''
+          else:
+              fix = '''
+          
+          android {
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          '''
+
+          with target.open("a", encoding="utf-8") as f:
+              f.write(fix)
+
+          print("Target Java dan Kotlin disamakan ke versi 17.")
+          PY
 
       - name: Build APK
         run: |
