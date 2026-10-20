@@ -7,6 +7,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,25 +28,29 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" --licenses
 
       - name: Install Android SDK packages
-        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Extract Android source
         run: |
           unzip -o CoCBuilderAssistant-Android-Source.zip -d android-source
-          echo "Source files extracted"
-          find android-source -maxdepth 3 -type f | head -80
+          find android-source -maxdepth 5 -type f | head -100
 
       - name: Build APK
         run: |
-          GRADLE_FILE=$(find android-source -name gradlew -type f | head -1)
+          GRADLE_FILE="$(find android-source -type f -name gradlew -print -quit)"
           if [ -z "$GRADLE_FILE" ]; then
-            echo "ERROR: File gradlew tidak ditemukan dalam ZIP."
+            echo "ERROR: gradlew tidak ditemukan. ZIP mungkin bukan proyek Gradle lengkap."
             exit 1
           fi
-          PROJECT_DIR=$(dirname "$GRADLE_FILE")
+          PROJECT_DIR="$(dirname "$GRADLE_FILE")"
           cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
@@ -53,5 +60,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CoCBuilderAssistant-APK
-          path: android-source/**/*.apk
+          path: android-source/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
