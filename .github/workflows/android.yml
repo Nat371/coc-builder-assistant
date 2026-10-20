@@ -1,1 +1,49 @@
 
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'CoCBuilderAssistant-Android-Source.zip'
+      - '.github/workflows/android.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Extract Android project
+        run: |
+          unzip -q CoCBuilderAssistant-Android-Source.zip -d source
+
+      - name: Build APK
+        run: |
+          WRAPPER=$(find source -type f -name gradlew -print -quit)
+          if [ -z "$WRAPPER" ]; then
+            echo "ERROR: File gradlew tidak ditemukan di ZIP"
+            exit 1
+          fi
+          cd "$(dirname "$WRAPPER")"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoCBuilderAssistant-APK
+          path: source/**/app/build/outputs/apk/debug/app-debug.apk
+
