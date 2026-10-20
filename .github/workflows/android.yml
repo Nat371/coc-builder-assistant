@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
@@ -28,10 +28,12 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Accept Android SDK licenses
+        shell: bash
         run: |
+          set +o pipefail
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
-          yes | "$SDKMANAGER" --licenses || true
-          "$SDKMANAGER" --licenses
+          yes | "$SDKMANAGER" --licenses
+          test ${PIPESTATUS[1]} -eq 0
 
       - name: Install Android SDK packages
         run: |
@@ -41,15 +43,19 @@ jobs:
       - name: Extract Android source
         run: |
           unzip -o CoCBuilderAssistant-Android-Source.zip -d android-source
+          echo "Files extracted:"
           find android-source -maxdepth 5 -type f | head -100
 
       - name: Build APK
+        shell: bash
         run: |
           GRADLE_FILE="$(find android-source -type f -name gradlew -print -quit)"
+
           if [ -z "$GRADLE_FILE" ]; then
-            echo "ERROR: gradlew tidak ditemukan. ZIP mungkin bukan proyek Gradle lengkap."
+            echo "ERROR: gradlew tidak ditemukan. ZIP bukan proyek Gradle lengkap."
             exit 1
           fi
+
           PROJECT_DIR="$(dirname "$GRADLE_FILE")"
           cd "$PROJECT_DIR"
           chmod +x gradlew
