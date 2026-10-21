@@ -53,6 +53,10 @@ jobs:
         run: |
           python3 scripts/install_media_projection_foreground_service.py
 
+      - name: Install OCR text recognition
+        run: |
+          python3 scripts/install_ocr_text_recognition.py
+
       - name: Ensure Accessibility service is registered in manifest
         run: |
           python3 scripts/ensure_accessibility_manifest.py
