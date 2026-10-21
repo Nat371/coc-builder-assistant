@@ -57,8 +57,16 @@ new = """                        val w = image.width
                                             "boost army", "latih tentara"
                                         ).any { normalized.contains(it) }
                                         val isAttackPreparation = hasBattleCountdown || (hasTroopBoost && normalized.contains("serangan"))
-                                        val isBattleHud = (normalized.contains("sisa waktu") || normalized.contains("time left") || normalized.contains("akhiri pertempuran") || normalized.contains("end battle")) &&
-                                            (normalized.contains("tentara") || normalized.contains("troop") || normalized.contains("spell") || normalized.contains("mantra") || normalized.contains("sisa waktu") || normalized.contains("time left"))
+                                        val hasBattleTimer = listOf(
+                                            "pertempuran berakhir dalam", "sisa waktu", "time left",
+                                            "battle ends in", "battle ends", "akhiri pertempuran",
+                                            "akhiri serangan", "end battle", "end attack"
+                                        ).any { normalized.contains(it) }
+                                        val hasBattleProgress = listOf(
+                                            "total kerusakan", "damage", "kerusakan", "bintang",
+                                            "stars", "pembela", "penyerang"
+                                        ).any { normalized.contains(it) }
+                                        val isBattleHud = hasBattleTimer && hasBattleProgress
                                         val isSearchMenu = listOf("pemain tunggal", "single player", "cari lawan tanding", "mencari lawan", "cari lawan", "multiplayer", "bonus bintang").any { normalized.contains(it) } ||
                                             (normalized.contains("berande") && normalized.contains("awaw")) ||
                                             (normalized.contains("beranda") && normalized.contains("awaw")) ||
