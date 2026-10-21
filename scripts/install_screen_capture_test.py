@@ -126,6 +126,8 @@ if "ScreenCaptureTestActivity" not in xml:
     manifest.write_text(xml, encoding="utf-8")
 
 src = service.read_text(encoding="utf-8")
+if "import android.content.Intent" not in src:
+    src = src.replace("package com.example.cocbuilder\\n", "package com.example.cocbuilder\\n\\nimport android.content.Intent\\n", 1)
 if "TES SCREEN CAPTURE" not in src:
     marker = '''        val close = Button(this).apply {'''
     insertion = '''        val capture = Button(this).apply {
