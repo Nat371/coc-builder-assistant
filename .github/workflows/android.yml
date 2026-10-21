@@ -8,6 +8,11 @@ on:
       - main
       - feature/auto-attack-accessibility
 
+# Keep only the newest build for this branch; prevent stale APK runs from confusing testing.
+concurrency:
+  group: coc-builder-android-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
