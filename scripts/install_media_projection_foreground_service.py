@@ -293,7 +293,12 @@ class ScreenCaptureTestActivity : Activity() {
         }
         try {
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(serviceIntent) else startService(serviceIntent)
-            resultView?.text = "Foreground service aktif. Sedang menguji frame…"
+            // The consent Activity was launched from an accessibility overlay while a game may be
+            // foreground. Close this portrait Activity after starting the projection service so
+            // Android can return to the previous app (e.g. CoC) instead of leaving it backgrounded.
+            // Capture status remains available in the persistent foreground-service notification.
+            resultView?.text = "Tangkapan layar aktif. Kembali ke game; status ada di notifikasi."
+            finish()
         } catch (e: Exception) {
             resultView?.text = "Gagal menjalankan foreground service: ${e.javaClass.simpleName}: ${e.message}"
         }
