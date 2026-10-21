@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - feature/auto-attack-accessibility
 
 permissions:
   contents: read
@@ -30,6 +31,22 @@ jobs:
       - name: Extract Android source
         run: |
           unzip -o CoCBuilderAssistant-Android-Source.zip -d android-source
+
+      - name: Add Accessibility Start Stop scaffold
+        run: |
+          python3 scripts/install_auto_attack_scaffold.py
+
+      - name: Install Accessibility UI inspector prototype
+        run: |
+          python3 scripts/install_accessibility_inspector.py
+
+      - name: Install screen capture permission test
+        run: |
+          python3 scripts/install_screen_capture_test.py
+
+      - name: Ensure Accessibility service is registered in manifest
+        run: |
+          python3 scripts/ensure_accessibility_manifest.py
 
       - name: Locate Android SDK
         run: |
@@ -58,18 +75,13 @@ jobs:
           from pathlib import Path
 
           root = Path("android-source/coc-builder-assistant/app")
-          files = [
-              root / "build.gradle.kts",
-              root / "build.gradle"
-          ]
-
+          files = [root / "build.gradle.kts", root / "build.gradle"]
           target = next((p for p in files if p.exists()), None)
           if target is None:
               raise SystemExit("ERROR: app/build.gradle(.kts) tidak ditemukan")
 
           if target.suffix == ".kts":
-              fix = '''
-          
+              fix = """
           android {
               compileOptions {
                   sourceCompatibility = JavaVersion.VERSION_17
@@ -78,14 +90,11 @@ jobs:
           }
 
           tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-              kotlinOptions {
-                  jvmTarget = "17"
-              }
+              kotlinOptions { jvmTarget = "17" }
           }
-          '''
+          """
           else:
-              fix = '''
-          
+              fix = """
           android {
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -94,15 +103,11 @@ jobs:
           }
 
           tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-              kotlinOptions {
-                  jvmTarget = "17"
-              }
+              kotlinOptions { jvmTarget = "17" }
           }
-          '''
-
+          """
           with target.open("a", encoding="utf-8") as f:
               f.write(fix)
-
           print("Target Java dan Kotlin disamakan ke versi 17.")
           PY
 
