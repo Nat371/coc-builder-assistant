@@ -100,8 +100,24 @@ class AutoAttackAccessibilityService : AccessibilityService() {
         }
     }
 
+    private var lastEventReportAt = 0L
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // Tahap berikutnya akan menambahkan pengenalan layar yang eksplisit.
+        if (event == null) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastEventReportAt < 1200L) return
+
+        val eventText = event.text
+            .map { it.toString().trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .take(3)
+            .joinToString(" | ")
+
+        val packageLabel = event.packageName?.toString()?.substringAfterLast('.') ?: "layar"
+        val detail = if (eventText.isNotBlank()) eventText.take(90) else "perubahan layar terdeteksi"
+        status?.text = "${packageLabel}: ${detail}"
+        lastEventReportAt = now
     }
 
     override fun onInterrupt() {
