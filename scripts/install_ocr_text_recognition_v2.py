@@ -45,7 +45,14 @@ new = """                        val w = image.width
                                     .process(InputImage.fromBitmap(bitmap, 0))
                                     .addOnSuccessListener { result ->
                                         val recognized = result.text.trim().replace(Regex("\\\\s+"), " ").take(350)
-                                        report("OCR berhasil diproses; resolusi ${w} × ${h}. Teks: ${if (recognized.isBlank()) "belum ada teks terbaca" else recognized}")
+                                        val screenState = when {
+                                            listOf("end battle", "battle ends", "return home", "kembali ke beranda", "kembali ke desa").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN HASIL/PENUTUPAN PERTEMPURAN"
+                                            listOf("attack", "find a match", "serang", "cari lawan", "battle").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN MENU SERANG"
+                                            listOf("builder base", "home village", "desa asal", "basis tukang").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN DESA/LOBI"
+                                            recognized.isBlank() -> "TEKS TIDAK TERBACA"
+                                            else -> "LAYAR BELUM DIKLASIFIKASIKAN"
+                                        }
+                                        report("OCR: $screenState; resolusi ${w} × ${h}. Teks: ${if (recognized.isBlank()) "belum ada teks terbaca" else recognized}")
                                         bitmap.recycle()
                                     }
                                     .addOnFailureListener { error ->
