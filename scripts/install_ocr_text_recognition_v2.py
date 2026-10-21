@@ -54,7 +54,7 @@ new = """                        val w = image.width
                                                 (normalized.contains("berande") && normalized.contains("lawan")) ||
                                                 (normalized.contains("beranda") && normalized.contains("lawan")) ||
                                                 (normalized.contains("mencai") && normalized.contains("lawa")) -> "KEMUNGKINAN MENU CARI LAWAN"
-                                            listOf("builder base", "home village", "desa asal", "basis tukang").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN DESA/LOBI"
+                                            listOf("builder base", "home village", "desa asal", "basis tukang", "bengkel pandai besi", "pandai besi", "info level").any { normalized.contains(it) } -> "KEMUNGKINAN DESA / INFO BANGUNAN"
                                             recognized.isBlank() -> "TEKS TIDAK TERBACA"
                                             else -> "LAYAR BELUM DIKLASIFIKASIKAN"
                                         }
