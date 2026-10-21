@@ -46,6 +46,17 @@ new = """                        val w = image.width
                                     .addOnSuccessListener { result ->
                                         val recognized = result.text.trim().replace(Regex("\\\\s+"), " ").take(350)
                                         val normalized = recognized.lowercase().replace(Regex("[^a-z0-9 ]"), " ").replace(Regex("\\\\s+"), " ").trim()
+                                        // The preparation screen often shows a countdown and "Percepat Tentara".
+                                        // These are OCR signals from the captured frame, not the overlay's foreground package.
+                                        val hasBattleCountdown = listOf(
+                                            "pertempuran dimulai dalam", "pertempuran dimulai", "battle starts in",
+                                            "battle begins in", "attack begins in", "serangan dimulai dalam"
+                                        ).any { normalized.contains(it) }
+                                        val hasTroopBoost = listOf(
+                                            "percepat tentara", "percepat pasukan", "boost troops",
+                                            "boost army", "latih tentara"
+                                        ).any { normalized.contains(it) }
+                                        val isAttackPreparation = hasBattleCountdown || (hasTroopBoost && normalized.contains("serangan"))
                                         val isBattleHud = (normalized.contains("sisa waktu") || normalized.contains("time left") || normalized.contains("akhiri pertempuran") || normalized.contains("end battle")) &&
                                             (normalized.contains("tentara") || normalized.contains("troop") || normalized.contains("spell") || normalized.contains("mantra") || normalized.contains("sisa waktu") || normalized.contains("time left"))
                                         val isSearchMenu = listOf("pemain tunggal", "single player", "cari lawan tanding", "mencari lawan", "cari lawan", "multiplayer", "bonus bintang").any { normalized.contains(it) } ||
@@ -56,6 +67,7 @@ new = """                        val w = image.width
                                             (normalized.contains("mencai") && normalized.contains("lawa"))
                                         val screenState = when {
                                             listOf("return home", "kembali ke beranda", "kembali ke desa", "victory", "kemenangan", "defeat", "kekalahan").any { normalized.contains(it) } -> "KEMUNGKINAN HASIL PERTEMPURAN"
+                                            isAttackPreparation -> "KEMUNGKINAN PERSIAPAN SERANGAN"
                                             isBattleHud -> "KEMUNGKINAN LAYAR PERTEMPURAN AKTIF"
                                             isSearchMenu -> "KEMUNGKINAN MENU CARI LAWAN"
                                             listOf("builder base", "home village", "desa asal", "basis tukang", "bengkel pandai besi", "pandai besi", "info level").any { normalized.contains(it) } -> "KEMUNGKINAN DESA / INFO BANGUNAN"
