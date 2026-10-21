@@ -46,14 +46,18 @@ new = """                        val w = image.width
                                     .addOnSuccessListener { result ->
                                         val recognized = result.text.trim().replace(Regex("\\\\s+"), " ").take(350)
                                         val normalized = recognized.lowercase().replace(Regex("[^a-z0-9 ]"), " ").replace(Regex("\\\\s+"), " ").trim()
+                                        val isBattleHud = (normalized.contains("sisa waktu") || normalized.contains("time left") || normalized.contains("akhiri pertempuran") || normalized.contains("end battle")) &&
+                                            (normalized.contains("tentara") || normalized.contains("troop") || normalized.contains("spell") || normalized.contains("mantra") || normalized.contains("sisa waktu") || normalized.contains("time left"))
+                                        val isSearchMenu = listOf("pemain tunggal", "single player", "cari lawan tanding", "mencari lawan", "cari lawan", "multiplayer", "bonus bintang").any { normalized.contains(it) } ||
+                                            (normalized.contains("berande") && normalized.contains("awaw")) ||
+                                            (normalized.contains("beranda") && normalized.contains("awaw")) ||
+                                            (normalized.contains("berande") && normalized.contains("lawan")) ||
+                                            (normalized.contains("beranda") && normalized.contains("lawan")) ||
+                                            (normalized.contains("mencai") && normalized.contains("lawa"))
                                         val screenState = when {
-                                            listOf("end battle", "battle ends", "return home", "kembali ke beranda", "kembali ke desa").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN HASIL/PENUTUPAN PERTEMPURAN"
-                                            listOf("attack", "find a match", "serang", "cari lawan", "mencari lawan", "lawan").any { normalized.contains(it) } ||
-                                                (normalized.contains("berande") && normalized.contains("awaw")) ||
-                                                (normalized.contains("beranda") && normalized.contains("awaw")) ||
-                                                (normalized.contains("berande") && normalized.contains("lawan")) ||
-                                                (normalized.contains("beranda") && normalized.contains("lawan")) ||
-                                                (normalized.contains("mencai") && normalized.contains("lawa")) -> "KEMUNGKINAN MENU CARI LAWAN"
+                                            listOf("return home", "kembali ke beranda", "kembali ke desa", "victory", "kemenangan", "defeat", "kekalahan").any { normalized.contains(it) } -> "KEMUNGKINAN HASIL PERTEMPURAN"
+                                            isBattleHud -> "KEMUNGKINAN LAYAR PERTEMPURAN AKTIF"
+                                            isSearchMenu -> "KEMUNGKINAN MENU CARI LAWAN"
                                             listOf("builder base", "home village", "desa asal", "basis tukang", "bengkel pandai besi", "pandai besi", "info level").any { normalized.contains(it) } -> "KEMUNGKINAN DESA / INFO BANGUNAN"
                                             recognized.isBlank() -> "TEKS TIDAK TERBACA"
                                             else -> "LAYAR BELUM DIKLASIFIKASIKAN"
