@@ -132,10 +132,18 @@ if "TES SCREEN CAPTURE" not in src:
     marker = '''        val close = Button(this).apply {'''
     insertion = '''        val capture = Button(this).apply {
             text = "TES SCREEN CAPTURE"
+            isEnabled = true
+            isClickable = true
+            minHeight = 52
             setOnClickListener {
-                val intent = Intent(this@AutoAttackAccessibilityService, ScreenCaptureTestActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(intent)
+                setStatus("Tombol tes ditekan. Membuka izin tangkapan layar…")
+                try {
+                    val intent = Intent(this@AutoAttackAccessibilityService, ScreenCaptureTestActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    setStatus("Gagal membuka tes: ${e.javaClass.simpleName}")
+                }
             }
         }
 '''
