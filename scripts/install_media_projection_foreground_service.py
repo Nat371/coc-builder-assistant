@@ -32,6 +32,17 @@ import android.os.IBinder
 import android.os.Looper
 
 class ScreenCaptureForegroundService : Service() {
+    companion object {
+        @Volatile var isProjectionActive: Boolean = false
+            private set
+        const val ACTION_RESULT = "com.example.cocbuilder.SCREEN_CAPTURE_RESULT"
+        const val EXTRA_MESSAGE = "message"
+        const val EXTRA_RESULT_CODE = "result_code"
+        const val EXTRA_RESULT_DATA = "result_data"
+        private const val CHANNEL_ID = "coc_capture_test"
+        private const val NOTIFICATION_ID = 7413
+    }
+
     private var projection: MediaProjection? = null
     private var display: VirtualDisplay? = null
     private var reader: ImageReader? = null
@@ -93,6 +104,13 @@ class ScreenCaptureForegroundService : Service() {
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 reader?.surface, null, handler
             )
+            isProjectionActive = display != null
+            if (display == null) {
+                report("Gagal: virtual display tidak berhasil dibuat.")
+                cleanup()
+                stopSelf()
+                return START_NOT_STICKY
+            }
             // Keep this single user-approved projection session alive until Android/user stops it.
             var lastReportAt = 0L
             val captureLoop = object : Runnable {
@@ -159,6 +177,7 @@ class ScreenCaptureForegroundService : Service() {
     }
 
     private fun cleanup() {
+        isProjectionActive = false
         try { display?.release() } catch (_: Exception) {}
         display = null
         try { reader?.close() } catch (_: Exception) {}
@@ -218,6 +237,12 @@ class ScreenCaptureTestActivity : Activity() {
             gravity = Gravity.CENTER
         }
         setContentView(resultView)
+        // Do not start a second MediaProjection session when the existing service is active.
+        if (ScreenCaptureForegroundService.isProjectionActive) {
+            resultView?.text = "Sesi perekaman sudah aktif. Tidak perlu meminta izin lagi."
+            finish()
+            return
+        }
         val filter = IntentFilter(ScreenCaptureForegroundService.ACTION_RESULT)
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(resultReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         else @Suppress("DEPRECATION") run { registerReceiver(resultReceiver, filter) }
