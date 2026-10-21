@@ -130,6 +130,25 @@ class ScreenCaptureForegroundService : Service() {
     private fun report(message: String) {
         val result = Intent(ACTION_RESULT).setPackage(packageName).putExtra(EXTRA_MESSAGE, message)
         sendBroadcast(result)
+        // Reflect real capture-loop status in the persistent notification as well.
+        val notification = if (Build.VERSION.SDK_INT >= 26) {
+            Notification.Builder(this, CHANNEL_ID)
+                .setContentTitle("CoC Builder Assistant")
+                .setContentText(message.take(120))
+                .setSmallIcon(android.R.drawable.ic_menu_camera)
+                .setOngoing(true)
+                .build()
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+                .setContentTitle("CoC Builder Assistant")
+                .setContentText(message.take(120))
+                .setSmallIcon(android.R.drawable.ic_menu_camera)
+                .setOngoing(true)
+                .build()
+        }
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .notify(NOTIFICATION_ID, notification)
     }
 
     private fun createNotificationChannel() {
