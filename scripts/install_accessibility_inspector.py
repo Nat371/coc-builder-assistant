@@ -42,15 +42,22 @@ class AutoAttackAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        event ?: return
-        val packageName = event.packageName?.toString() ?: return
-        // Opening this helper or Android's capture-consent dialog changes the latest event.
-        // Keep the game package separate so our own Activity is not mistaken for Clash of Clans.
-        if (packageName == targetGamePackage) {
-            foregroundPackage = packageName
+        // Prefer the active accessibility window's root package; event.packageName can
+        // refer to the helper overlay or Android permission UI rather than the game.
+        val eventPackage = event?.packageName?.toString()
+        val activePackage = try {
+            windows.firstOrNull { it.isActive }?.root?.let { root ->
+                val name = root.packageName?.toString()
+                root.recycle()
+                name
+            }
+        } catch (_: Exception) { null }
+        val candidates = listOfNotNull(activePackage, eventPackage).distinct()
+        if (targetGamePackage in candidates) {
+            foregroundPackage = targetGamePackage
             setStatus("CoC terdeteksi: $foregroundPackage")
         } else if (foregroundPackage == "Belum terdeteksi") {
-            setStatus("Menunggu Clash of Clans… paket saat ini: $packageName")
+            setStatus("Menunggu Clash of Clans… event: ${eventPackage ?: "kosong"}; window: ${activePackage ?: "kosong"}")
         }
     }
 
