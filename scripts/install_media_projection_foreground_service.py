@@ -93,19 +93,32 @@ class ScreenCaptureForegroundService : Service() {
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 reader?.surface, null, handler
             )
-            handler.postDelayed({
-                val image = try { reader?.acquireLatestImage() } catch (_: Exception) { null }
-                if (image == null) {
-                    report("Izin aktif, tetapi frame belum terbaca. Coba lagi saat game terbuka.")
-                } else {
-                    val w = image.width
-                    val h = image.height
-                    image.close()
-                    report("BERHASIL: frame diterima, resolusi ${w} × ${h}.")
+            // Keep this single user-approved projection session alive until Android/user stops it.
+            var lastReportAt = 0L
+            val captureLoop = object : Runnable {
+                override fun run() {
+                    if (projection == null || reader == null) return
+                    val image = try { reader?.acquireLatestImage() } catch (_: Exception) { null }
+                    if (image != null) {
+                        val w = image.width
+                        val h = image.height
+                        image.close()
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now - lastReportAt >= 5000L) {
+                            report("SESI AKTIF: frame diterima, resolusi ${w} × ${h}. Izin tidak perlu diminta ulang selama layanan ini tetap aktif.")
+                            lastReportAt = now
+                        }
+                    } else {
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now - lastReportAt >= 5000L) {
+                            report("Sesi perekaman aktif, menunggu frame layar…")
+                            lastReportAt = now
+                        }
+                    }
+                    handler.postDelayed(this, 500)
                 }
-                cleanup()
-                stopSelf()
-            }, 1000)
+            }
+            handler.post(captureLoop)
         } catch (e: Exception) {
             report("Gagal mengambil frame: ${e.javaClass.simpleName}: ${e.message}")
             cleanup()
