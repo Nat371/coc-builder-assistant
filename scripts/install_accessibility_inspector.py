@@ -31,6 +31,7 @@ class AutoAttackAccessibilityService : AccessibilityService() {
     private var panel: LinearLayout? = null
     private var status: TextView? = null
     private var details: TextView? = null
+    private val targetGamePackage = "com.supercell.clashofclans"
     private var foregroundPackage = "Belum terdeteksi"
 
     override fun onServiceConnected() {
@@ -42,8 +43,15 @@ class AutoAttackAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
-        event.packageName?.toString()?.let { foregroundPackage = it }
-        setStatus("Aplikasi terdeteksi: $foregroundPackage")
+        val packageName = event.packageName?.toString() ?: return
+        // Opening this helper or Android's capture-consent dialog changes the latest event.
+        // Keep the game package separate so our own Activity is not mistaken for Clash of Clans.
+        if (packageName == targetGamePackage) {
+            foregroundPackage = packageName
+            setStatus("CoC terdeteksi: $foregroundPackage")
+        } else if (foregroundPackage == "Belum terdeteksi") {
+            setStatus("Menunggu Clash of Clans… paket saat ini: $packageName")
+        }
     }
 
     private fun setStatus(message: String) {
