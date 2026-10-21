@@ -133,12 +133,15 @@ class AutoAttackAccessibilityService : AccessibilityService() {
 
 ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
 tree = ET.parse(manifest)
-root_el = tree.getroot()
+manifest_el = tree.getroot()
+application_el = manifest_el.find("application")
+if application_el is None:
+    raise SystemExit("ERROR: elemen <application> tidak ditemukan di AndroidManifest.xml")
 ANDROID = "{http://schemas.android.com/apk/res/android}"
 service_name = "com.example.cocbuilder.AutoAttackAccessibilityService"
-exists = any(el.tag == "service" and el.get(ANDROID + "name") == service_name for el in root_el.iter())
+exists = any(el.tag == "service" and el.get(ANDROID + "name") == service_name for el in application_el.iter())
 if not exists:
-    service_el = ET.SubElement(root_el, "service", {
+    service_el = ET.SubElement(application_el, "service", {
         ANDROID + "name": service_name,
         ANDROID + "label": "CoC Builder Auto Attack (uji)",
         ANDROID + "permission": "android.permission.BIND_ACCESSIBILITY_SERVICE",
