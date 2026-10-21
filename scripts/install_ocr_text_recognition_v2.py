@@ -45,7 +45,7 @@ new = """                        val w = image.width
                                     .process(InputImage.fromBitmap(bitmap, 0))
                                     .addOnSuccessListener { result ->
                                         val recognized = result.text.trim().replace(Regex("\\\\s+"), " ").take(350)
-                                        val normalized = recognized.lowercase().replace(Regex("[^a-z0-9 ]"), " ").replace(Regex("\\s+"), " ").trim()
+                                        val normalized = recognized.lowercase().replace(Regex("[^a-z0-9 ]"), " ").replace(Regex("\\\\s+"), " ").trim()
                                         val screenState = when {
                                             listOf("end battle", "battle ends", "return home", "kembali ke beranda", "kembali ke desa").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN HASIL/PENUTUPAN PERTEMPURAN"
                                             listOf("attack", "find a match", "serang", "cari lawan", "mencari lawan", "lawan").any { normalized.contains(it) } ||
