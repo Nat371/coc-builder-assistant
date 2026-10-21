@@ -120,10 +120,12 @@ class ScreenCaptureForegroundService : Service() {
                     if (image != null) {
                         val w = image.width
                         val h = image.height
+                        val brightness = try { averageLuminancePercent(image) } catch (_: Exception) { null }
                         image.close()
                         val now = android.os.SystemClock.elapsedRealtime()
                         if (now - lastReportAt >= 5000L) {
-                            report("SESI AKTIF: frame diterima, resolusi ${w} × ${h}. Izin tidak perlu diminta ulang selama layanan ini tetap aktif.")
+                            val visualInfo = brightness?.let { " Kecerahan rata-rata sampel: ${it}%." } ?: ""
+                            report("SESI AKTIF: frame diproses, resolusi ${w} × ${h}.${visualInfo} Ini diagnostik visual dasar, belum mengenali pasukan atau markas.")
                             lastReportAt = now
                         }
                     } else {
@@ -143,6 +145,41 @@ class ScreenCaptureForegroundService : Service() {
             stopSelf()
         }
         return START_NOT_STICKY
+    }
+
+    // Sample pixels directly from the RGBA frame to verify that image content is readable.
+    // This is a lightweight diagnostic only; it does not classify game objects.
+    private fun averageLuminancePercent(image: android.media.Image): Int? {
+        val plane = image.planes.firstOrNull() ?: return null
+        val buffer = plane.buffer.duplicate()
+        val pixelStride = plane.pixelStride
+        val rowStride = plane.rowStride
+        if (pixelStride < 3 || rowStride <= 0) return null
+        val width = image.width
+        val height = image.height
+        val stepX = (width / 40).coerceAtLeast(1)
+        val stepY = (height / 40).coerceAtLeast(1)
+        var total = 0L
+        var count = 0L
+        var y = 0
+        while (y < height) {
+            var x = 0
+            val rowBase = y * rowStride
+            while (x < width) {
+                val offset = rowBase + x * pixelStride
+                if (offset >= 0 && offset + 2 < buffer.limit()) {
+                    val red = buffer.get(offset).toInt() and 0xff
+                    val green = buffer.get(offset + 1).toInt() and 0xff
+                    val blue = buffer.get(offset + 2).toInt() and 0xff
+                    total += (299L * red + 587L * green + 114L * blue) / 1000L
+                    count++
+                }
+                x += stepX
+            }
+            y += stepY
+        }
+        if (count == 0L) return null
+        return ((total / count) * 100L / 255L).toInt().coerceIn(0, 100)
     }
 
     private fun report(message: String) {
