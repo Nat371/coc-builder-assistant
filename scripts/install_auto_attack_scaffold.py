@@ -121,6 +121,16 @@ class AutoAttackAccessibilityService : AccessibilityService() {
 '''
 (java_root / "AutoAttackAccessibilityService.kt").write_text(service, encoding="utf-8")
 
+values_dir = root / "app/src/main/res/values"
+values_dir.mkdir(parents=True, exist_ok=True)
+strings_xml = values_dir / "strings.xml"
+if not strings_xml.exists():
+    strings_xml.write_text("""<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CoC Builder Assistant</string>
+</resources>
+""", encoding="utf-8")
+
 (res_xml).write_text('''<?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
