@@ -40,6 +40,10 @@ jobs:
         run: |
           python3 scripts/install_accessibility_inspector.py
 
+      - name: Install screen capture permission test
+        run: |
+          python3 scripts/install_screen_capture_test.py
+
       - name: Locate Android SDK
         run: |
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
