@@ -191,14 +191,6 @@ class ScreenCaptureForegroundService : Service() {
         super.onDestroy()
     }
 
-    companion object {
-        const val ACTION_RESULT = "com.example.cocbuilder.SCREEN_CAPTURE_RESULT"
-        const val EXTRA_MESSAGE = "message"
-        const val EXTRA_RESULT_CODE = "result_code"
-        const val EXTRA_RESULT_DATA = "result_data"
-        private const val CHANNEL_ID = "coc_capture_test"
-        private const val NOTIFICATION_ID = 7413
-    }
 }
 ''', encoding="utf-8")
 
