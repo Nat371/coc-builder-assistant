@@ -47,7 +47,12 @@ new = """                        val w = image.width
                                         val recognized = result.text.trim().replace(Regex("\\\\s+"), " ").take(350)
                                         val screenState = when {
                                             listOf("end battle", "battle ends", "return home", "kembali ke beranda", "kembali ke desa").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN HASIL/PENUTUPAN PERTEMPURAN"
-                                            listOf("attack", "find a match", "serang", "cari lawan", "mencari lawan", "lawan").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN MENU CARI LAWAN"
+                                            listOf("attack", "find a match", "serang", "cari lawan", "mencari lawan", "lawan").any { normalized.contains(it) } ||
+                                                (normalized.contains("berande") && normalized.contains("awaw")) ||
+                                                (normalized.contains("beranda") && normalized.contains("awaw")) ||
+                                                (normalized.contains("berande") && normalized.contains("lawan")) ||
+                                                (normalized.contains("beranda") && normalized.contains("lawan")) ||
+                                                (normalized.contains("mencai") && normalized.contains("lawa")) -> "KEMUNGKINAN MENU CARI LAWAN"
                                             listOf("builder base", "home village", "desa asal", "basis tukang").any { recognized.contains(it, ignoreCase = true) } -> "KEMUNGKINAN DESA/LOBI"
                                             recognized.isBlank() -> "TEKS TIDAK TERBACA"
                                             else -> "LAYAR BELUM DIKLASIFIKASIKAN"
